@@ -1,0 +1,3 @@
+pandas==1.3.5
+google-cloud-firestore==2.3.4
+google-cloud-storage==1.44.0
