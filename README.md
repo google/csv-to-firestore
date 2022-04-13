@@ -1,1 +1,24 @@
-## README Template
+## Deploy
+
+The cloud function requires the collection id the be specified in the filename as the following: "filename[collection=YOUR_COLLECTION_ID].csv"
+Optionally it is also possible to add [key=YOUR_COLUMN_FOR_DOCUMENT_ID] to the filename to specify which column to use for the document id. If no column is specified, firestore will create a random id. 
+
+Run the following command to deploy the cloud function. Fill in:
+1. The name of the bucket that triggers the cloud function
+2. The path to the folder that contains main.py and requirements.txt ( use . for the current directory )
+3. True or False in UPLOAD_HISTORY depending on if you want to create a seperate collection that keeps file upload history.
+4. Optionally you can specifcy the region or other parameters, see documentation here: https://cloud.google.com/sdk/gcloud/reference/functions/deploy
+
+```console
+gcloud functions deploy cs_to_firestore \
+  --runtime python39 \
+  --trigger-resource YOUR_TRIGGER_BUCKET_NAME \
+  --trigger-event google.storage.object.finalize \
+  --entry-point cs_to_firestore_trigger \
+  --source PATH_TO_SOURCE_CODE \
+  --memory=1024MB \
+  --set-env-vars=,UPLOAD_HISTORY=TRUE OR FALSE \
+  --timeout=540
+```
+
+Note: After deploying the Cloud Function the logs might display a "OpenBLAS WARNING". This is the result of some of the used packages and does not influence the functionaly of the Cloud Function.

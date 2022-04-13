@@ -60,7 +60,7 @@ class Batch:
       if i['collection'] not in self.batch_db.data:
         self.batch_db.data[i['collection']] = {}
       self.batch_db.data[i['collection']][i['document']] = i['data']
-    self.data = {}
+    self.data = []
 
 
 class Storage:
