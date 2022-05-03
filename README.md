@@ -6,8 +6,9 @@ Optionally it is also possible to add [key=YOUR_COLUMN_FOR_DOCUMENT_ID] to the f
 Run the following command to deploy the cloud function. Fill in:
 1. The name of the bucket that triggers the cloud function
 2. The path to the folder that contains main.py and requirements.txt ( use . for the current directory )
-3. True or False in UPLOAD_HISTORY depending on if you want to create a seperate collection that keeps file upload history.
-4. Optionally you can specifcy the region or other parameters, see documentation here: https://cloud.google.com/sdk/gcloud/reference/functions/deploy
+3. TRUE or FALSE for UPLOAD_HISTORY depending on if you want to create a seperate collection that keeps file upload history.
+4. TRUE or FALSE for EXCLUDE_DOCUMENT_ID_VALUE. When a document id is specified in the filename the solution stores a value, such as "id" in both the document id and the data in this document. If this is not desired, set this EXCLUDE_DOCUMENT_ID_VALUE to TRUE so that it is only stored as a document id. 
+5. Optionally you can specify the region or other parameters, see documentation here: https://cloud.google.com/sdk/gcloud/reference/functions/deploy
 
 ```console
 gcloud functions deploy cs_to_firestore \
@@ -17,8 +18,8 @@ gcloud functions deploy cs_to_firestore \
   --entry-point cs_to_firestore_trigger \
   --source PATH_TO_SOURCE_CODE \
   --memory=1024MB \
-  --set-env-vars=,UPLOAD_HISTORY=TRUE OR FALSE \
+  --set-env-vars=UPLOAD_HISTORY=TRUE/FALSE,EXCLUDE_DOCUMENT_ID_VALUE=TRUE/FALSE \
   --timeout=540
 ```
 
-Note: After deploying the Cloud Function the logs might display a "OpenBLAS WARNING". This is the result of some of the used packages and does not influence the functionaly of the Cloud Function.
+Note: After deploying the Cloud Function the logs might display a "OpenBLAS WARNING". This is the result of some of the used packages and does not influence the functionality of the Cloud Function.

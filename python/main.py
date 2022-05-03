@@ -147,6 +147,7 @@ def set_document(record, db, batch, timestamp, firestore_path):
   Returns:
     False if incorrect document id and True if record was set in batch.
   """
+  document_id = firestore_path['document_id']
   # create a key value pair in dictionary containing the current timestamp
   record['timestamp'] = timestamp
   # if document id is specified; check if it meets firestore requirements
@@ -157,8 +158,8 @@ def set_document(record, db, batch, timestamp, firestore_path):
   incorrect string format. See firestore documentation
   https://firebase.google.com/docs/firestore/quotas""")
       return False
-    del record[firestore_path['document_id']]
-
+    if os.getenv('EXCLUDE_DOCUMENT_ID_VALUE') == 'TRUE':  
+      del record[firestore_path['document_id']]
   data_path_and_id = db.collection(firestore_path['collection_id']).document(document_id)
   batch.set(data_path_and_id, record)
   return True
@@ -198,7 +199,7 @@ def get_parameters_from_filename(filename):
   # raise error if no collection id is found
   if collection_id is None:
     raise ValueError('there was no collection id specified in the filename, ',
-    'try adding [[collection=your_collection_id]'
+    'try adding [collection=your_collection_id]'
     )
   return {
           "collection_id": collection_id,

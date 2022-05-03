@@ -98,6 +98,21 @@ def test_get_file():
   assert in_df.equals(pd.read_csv(test_filename, dtype=object))
 
 
+def compare_in_and_out_data_fs(trigger_event, df, exclude_doc_id):
+  db = Db()
+  storage = Storage()
+  cs_to_firestore(trigger_event, storage, db, firestore_path_global)
+  for index, row in df.iterrows():
+    data = row.to_dict()
+    out_data = db.collection(firestore_path_global['collection_id']).document(
+        data[firestore_path_global['document_id']]).get().to_dict()
+    if exclude_doc_id:
+      del data[firestore_path_global['document_id']]
+    del out_data['timestamp']
+    # check if data returned from firestore matches the data that was inserted
+    assert data == out_data
+
+
 def test_cs_to_firestore():
   db = Db()
   storage = Storage()
@@ -105,16 +120,12 @@ def test_cs_to_firestore():
   df = pd.read_csv(test_filename)
   trigger_event = {'name': test_filename, 'bucket': 'test'}
   # Send random file to firestore and retrieve it to verify if the returned data
-  # is equal.
-  cs_to_firestore(trigger_event, storage, db, firestore_path_global)
-  for index, row in df.iterrows():
-    data = row.to_dict()
-    out_data = db.collection(firestore_path_global['collection_id']).document(
-        data[firestore_path_global['document_id']]).get().to_dict()
-    del data[firestore_path_global['document_id']]
-    del out_data['timestamp']
-    # check if data returned from firestore matches the data that was inserted
-    assert data == out_data
+  # is equal. Check if EXCLUDE_DOCUMENT_ID_VALUE is properly applied to data.
+  os.environ['EXCLUDE_DOCUMENT_ID_VALUE'] = 'TRUE'
+  compare_in_and_out_data_fs(trigger_event, df, True)
+  os.environ['EXCLUDE_DOCUMENT_ID_VALUE'] = 'FALSE'
+  compare_in_and_out_data_fs(trigger_event, df, False)
+
 
 
 def assert_filename_parameters(filename, exp_collection_id, exp_document_id):
