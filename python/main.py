@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO(psnel) run live tests with large amount of data to discover limits
 
 import datetime
 import io
