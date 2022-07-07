@@ -1,0 +1,19 @@
+main:
+    params: [input]
+    steps:
+    - insert:
+        call: googleapis.bigquery.v2.jobs.insert
+        args:
+          projectId: ${gcp_project}
+          body:
+            configuration:
+              extract:
+                destinationFormat: "CSV"
+                destinationUri: "gs://${gcs_bucket}/${file_name}"
+                fieldDelimiter: ","
+                printHeader: true
+                sourceTable:
+                  projectId: ${gcp_project}
+                  datasetId: ${bq_dataset}
+                  tableId: ${bq_table}
+        result: insertResult
