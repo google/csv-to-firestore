@@ -14,6 +14,10 @@ want to use a specific column as document id.
 ## Cloud Project
 
 To start we need to select the Google Cloud Project to deploy the solution in.
+
+We'll be using Terraform to deploy solution on Google Cloud, Terraform is an
+open Source tool to safely and predictably deploy infrastructure from code.
+
 Terraform provisions real GCP resources, so anything you create in this session
 will be billed against this project.
 <walkthrough-project-setup></walkthrough-project-setup>
