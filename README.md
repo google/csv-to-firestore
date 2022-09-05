@@ -27,7 +27,7 @@ firestore will create a random id.
 
 Retrieve the repository by running the following command:
 
-``` git clone https://github.com/GoogleCloudPlatform/csv-to-firestore ```
+``` git clone https://github.com/Google/csv-to-firestore ```
 
 Complete and run the following command to deploy the cloud function.
 
