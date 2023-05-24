@@ -32,11 +32,11 @@ Retrieve the repository by running the following command:
 Complete and run the following command to deploy the cloud function.
 
 ```console
-gcloud functions deploy cs_to_firestore \
+gcloud functions deploy csv_to_firestore \
   --runtime python39 \
   --trigger-resource YOUR_TRIGGER_BUCKET_NAME \
   --trigger-event google.storage.object.finalize \
-  --entry-point cs_to_firestore_trigger \
+  --entry-point csv_to_firestore_trigger \
   --source PATH_TO_SOURCE_CODE \
   --memory=1024MB \
   --set-env-vars=UPLOAD_HISTORY=TRUE/FALSE,EXCLUDE_DOCUMENT_ID_VALUE=TRUE/FALSE \

@@ -74,7 +74,7 @@ resource "google_cloudfunctions_function" "csv_to_firestore" {
   source_archive_bucket = google_storage_bucket.cf_upload_bucket.name
   source_archive_object = google_storage_bucket_object.cf_upload_object.name
   timeout               = 540
-  entry_point           = "cs_to_firestore_trigger"
+  entry_point           = "csv_to_firestore_trigger"
   environment_variables = {
     UPLOAD_HISTORY = true
     EXCLUDE_DOCUMENT_ID_VALUE = true

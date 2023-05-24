@@ -17,7 +17,7 @@ import io
 import os
 import sys
 from main import check_fs_constraints
-from main import cs_to_firestore
+from main import csv_to_firestore
 from main import get_file
 from main import set_document
 from main import get_parameters_from_filename
@@ -101,7 +101,7 @@ def test_get_file():
 def compare_in_and_out_data_fs(trigger_event, df, exclude_doc_id):
   db = Db()
   storage = Storage()
-  cs_to_firestore(trigger_event, storage, db, firestore_path_global)
+  csv_to_firestore(trigger_event, storage, db, firestore_path_global)
   for index, row in df.iterrows():
     data = row.to_dict()
     out_data = db.collection(firestore_path_global['collection_id']).document(
@@ -113,7 +113,7 @@ def compare_in_and_out_data_fs(trigger_event, df, exclude_doc_id):
     assert data == out_data
 
 
-def test_cs_to_firestore():
+def test_csv_to_firestore():
   db = Db()
   storage = Storage()
   # Read test csv to dataframe.

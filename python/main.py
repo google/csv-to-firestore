@@ -26,12 +26,12 @@ StringIO = io.StringIO
 datetime = datetime.datetime
 
 
-def cs_to_firestore_trigger(event, context):
+def csv_to_firestore_trigger(event, context):
   """Triggered by cloud storage file upload, initializes client file processing.
 
   Executed whenever the cloud function is triggered by a new file
   in the cloud storage bucket. Function initializes a cloud storage and
-  firestore client whom are forwarded to cs_to_firestore that will process the
+  firestore client whom are forwarded to csv_to_firestore that will process the
   file.
 
   Args:
@@ -44,13 +44,13 @@ def cs_to_firestore_trigger(event, context):
   """
   firestore_path = get_parameters_from_filename(event['name'])
   storage_client, db = storage.Client(), firestore.Client()
-  cs_to_firestore(event, storage_client, db, firestore_path)
+  csv_to_firestore(event, storage_client, db, firestore_path)
 
 
-def cs_to_firestore(event, storage_client, db, firestore_path):
-  """Triggered by cs_to_firestore_trigger process and sends file to Firestore.
+def csv_to_firestore(event, storage_client, db, firestore_path):
+  """Triggered by csv_to_firestore_trigger process and sends file to Firestore.
 
-  Function is triggered by cs_to_firestore_trigger and receives path to cs file
+  Function is triggered by csv_to_firestore_trigger and receives path to cs file
   and a storage and firestore client. Function:
     1. calls function to read file from cloud storage.
     2. runs through all elements in the file and sends them in batches to

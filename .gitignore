@@ -3,3 +3,10 @@ dist/
 terraform.tfstate*
 
 .DS_Store
+
+venv/
+env/
+
+.idea/
+
+__pycache__/
