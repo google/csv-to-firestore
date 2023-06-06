@@ -15,7 +15,7 @@ id, product_name, price_usd
 
 Data in Firestore:
 
-![Screenshot of data in Firestore](./Firestore example screenshot.png)
+![Screenshot of data in Firestore](./firestore_example_screenshot.png)
 
 ## Deployment
 
