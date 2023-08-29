@@ -38,7 +38,7 @@ resource "google_workflows_workflow" "bq_to_csv" {
     bq_dataset = var.bq_dataset
     bq_table = var.bq_table
     gcs_bucket = var.gcs_export_bucket
-    file_name = "bq_export[collection=${var.fs_collection}][key=${var.gcs_export_bucket}].csv"
+    file_name = "bq_export[collection=${var.fs_collection}][key=${var.csv_key_column}].csv"
   })
 }
 
