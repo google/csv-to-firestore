@@ -53,6 +53,13 @@ Complete the following parameters in the command:
 **Note:** After deploying the Cloud Function the logs might display a "OpenBLAS
 WARNING". This is the result of some of the used packages and does not influence the functionality of the Cloud Function.
 
+### Permissions
+Give the service account that the Cloud Function is running with the following
+permissions:
+- roles/datastore.user
+- roles/storage.objectViewer
+- roles/storage.insightsCollectorService
+
 ### Deploying BQ Export to Firestore
 If you have your data on BigQuery and want to set up an automated workflow to export this table to Firestore you
 can follow the following instructions.
