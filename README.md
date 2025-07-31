@@ -73,7 +73,7 @@ can follow the following instructions.
 6. (optional) If you want to maintain your Terraform state on GCP instead of locally; navigate to the backend.tf file and uncomment the resource. Fill in the bucket name "resource.google_storage_bucket.backend" and run terraform init to sync terraform with GCS rather than local state saving and recovery.
 
 #### Guided tutorial for deployment
-[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/google/csv-to-firestore&cloudshell_image=gcr.io%2Fgraphite-cloud-shell-images%2Fterraform%3Alatest&cloudshell_git_branch=main&cloudshell_open_in_editor=example.tfvars&cloudshell_workspace=terraform%2F&cloudshell_tutorial=tutorial.md&ephemeral=true)
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/google/csv-to-firestore&cloudshell_open_in_editor=example.tfvars&cloudshell_workspace=terraform%2F&cloudshell_tutorial=tutorial.md&ephemeral=true)
 
 ### Disclaimer
 This is not an officially supported Google product. Please be aware that bugs may lurk, and that we reserve the right to make small backwards-incompatible changes. Feel free to open bugs or feature requests, or contribute directly (see CONTRIBUTING.md for details).

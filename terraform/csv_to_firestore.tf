@@ -67,7 +67,7 @@ resource "google_cloudfunctions_function" "csv_to_firestore" {
   name = "csv-to-firestore"
   region = var.gcp_region_cloud_function
   description = "Cloud Function to import CSV files from GCS to Firestore"
-  runtime     = "python39"
+  runtime     = "python312"
   service_account_email = google_service_account.csv_to_firestore.email
 
   available_memory_mb   = 1024
