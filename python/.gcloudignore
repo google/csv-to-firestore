@@ -1,9 +1,11 @@
 # git
 .git/
+.coverage
 
 # Test files
 .pytest_cache
 __pycache__
 main_test.py
 mock_test.py
-test.csv
+filetest*.csv
+requirements_dev.txt

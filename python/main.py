@@ -13,17 +13,20 @@
 # limitations under the License.
 
 
-import datetime
+from datetime import datetime, timezone
 import io
+import logging
 import os
 import re
 
 from google.cloud import firestore
+from google.cloud import logging as cloudlogging
 from google.cloud import storage
 import pandas as pd
 
-StringIO = io.StringIO
-datetime = datetime.datetime
+logger = cloudlogging.Client()
+logger.setup_logging(log_level=logging.INFO) # attach the handler to the root Python logger
+
 
 
 def csv_to_firestore_trigger(event, context):
@@ -43,7 +46,9 @@ def csv_to_firestore_trigger(event, context):
     None
   """
   firestore_path = get_parameters_from_filename(event['name'])
-  storage_client, db = storage.Client(), firestore.Client()
+  database = firestore_path.get('database_name')
+  logging.debug('Using database: %s', database if database is not None else '(default)')
+  storage_client, db = storage.Client(), firestore.Client(database=database)
   csv_to_firestore(event, storage_client, db, firestore_path)
 
 
@@ -55,7 +60,7 @@ def csv_to_firestore(event, storage_client, db, firestore_path):
     1. calls function to read file from cloud storage.
     2. runs through all elements in the file and sends them in batches to
     Firestore.
-    3. prints that function was successfully completed for cloud logging.
+    3. prints that function was successfully completed in the logs.
 
   Args:
     event: event object from trigger containing information on the location of
@@ -67,7 +72,7 @@ def csv_to_firestore(event, storage_client, db, firestore_path):
   Returns:
     None
   """
-  print('started processing file ' + event['name'])
+  logging.info('Processing file %s/%s', event['bucket'], event['name'])
   csv_file = get_file(storage_client.get_bucket(event['bucket']), event['name'])
 
   chunk_size = 500  # maximum batch size for API
@@ -75,9 +80,10 @@ def csv_to_firestore(event, storage_client, db, firestore_path):
   failed_records_counter = 0
 
   # loop through csv and insert rows in batches for firestore
-  with pd.read_csv(csv_file, chunksize=chunk_size) as reader:
+  with pd.read_csv(csv_file, chunksize=chunk_size,
+                   dtype={firestore_path.get('document_id'): str}) as reader:
     for chunk in reader:
-      chunk_timestamp_utc = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+      chunk_timestamp_utc = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
       data_dict = chunk.to_dict(orient='records')
       # initialize batch for upload
       batch = db.batch()
@@ -90,7 +96,7 @@ def csv_to_firestore(event, storage_client, db, firestore_path):
 
   # add document to firestore to record the processed file
   if os.getenv('UPLOAD_HISTORY') != 'FALSE':
-    timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     # concatenate timestamp to filename to create unique document id
     document_id = (event['name'] + '_' + timestamp)
     # sent log to firestore
@@ -102,10 +108,10 @@ def csv_to_firestore(event, storage_client, db, firestore_path):
                       'timestamp': timestamp,
                   })
 
-  print(f"""Successfully updated {row_counter} records for {event['bucket']}
-with {event['name']}.""")
+  logging.info('Successfully updated %s records for %s with %s.', row_counter,
+               event['bucket'], event['name'])
   if failed_records_counter != 0:
-    print(f'{failed_records_counter}records failed to upload, see cloud logs.')
+    logging.warning('%s records failed to upload, see cloud logs.', failed_records_counter)
 
 
 def get_file(bucket, name):
@@ -125,7 +131,7 @@ def get_file(bucket, name):
   blob = bucket.blob(name)
   blob = blob.download_as_bytes()
   blob = blob.decode('utf-8')
-  blob = StringIO(blob)
+  blob = io.StringIO(blob)
   return blob
 
 
@@ -153,11 +159,11 @@ def set_document(record, db, batch, timestamp, firestore_path):
   if firestore_path['document_id'] is not None:
     document_id = str(record[firestore_path['document_id']])
     if check_fs_constraints(document_id) is None:
-      print(f"""Failed to update record with document id: [{document_id}] due to
-  incorrect string format. See firestore documentation
-  https://firebase.google.com/docs/firestore/quotas""")
+      logging.error(
+          'Failed to update record with document id: [%s] due to incorrect string format. See firestore documentation https://firebase.google.com/docs/firestore/quotas',
+          document_id)
       return False
-    if os.getenv('EXCLUDE_DOCUMENT_ID_VALUE') == 'TRUE':  
+    if os.getenv('EXCLUDE_DOCUMENT_ID_VALUE') == 'TRUE':
       del record[firestore_path['document_id']]
   data_path_and_id = db.collection(firestore_path['collection_id']).document(document_id)
   batch.set(data_path_and_id, record)
@@ -184,8 +190,8 @@ def get_parameters_from_filename(filename):
   """Receives a filename and returns the defined collection and document id.
 
   Receives a filename as string and calls regex_search_string to find
-  a specific parameter stated in this string. Returns a tuple containing the
-  collection and document id used to store data in firestore.
+  a specific parameter stated in this string. Returns a dictionary containing
+  the database name, collection and document id used to store data in firestore.
 
   Args:
     filename: string filename
@@ -193,6 +199,7 @@ def get_parameters_from_filename(filename):
   Returns:
     Tuple containing a collection id and the column to be used for document id's
   """
+  database_name = regex_search_string(filename, 'database')
   collection_id = regex_search_string(filename, 'collection')
   document_id = regex_search_string(filename, 'key')
   # raise error if no collection id is found
@@ -201,6 +208,7 @@ def get_parameters_from_filename(filename):
     'try adding [collection=your_collection_id]'
     )
   return {
+          "database_name": database_name,
           "collection_id": collection_id,
           "document_id": document_id
           }
