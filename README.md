@@ -20,10 +20,12 @@ Data in Firestore:
 ## Deployment
 
 The cloud function requires the collection id the be specified in the filename
-as the following: "filename[collection=YOUR_COLLECTION_ID].csv" Optionally it is
-also possible to add [key=YOUR_COLUMN_FOR_DOCUMENT_ID] to the filename to
-specify which column to use for the document id. If no column is specified,
-firestore will create a random id.
+as the following: "filename[collection=YOUR_COLLECTION_ID].csv".
+Optionally it is also possible to add the following options:
+  - "[key=YOUR_COLUMN_FOR_DOCUMENT_ID]" to specify which column to use for the document
+  id. If no column is specified, Firestore will create a random id.
+  - "[database=YOUR_DATABASE_NAME]" to specify which database to use, if you're not using
+  the default one.
 
 Retrieve the repository by running the following command:
 
