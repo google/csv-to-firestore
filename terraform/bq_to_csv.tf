@@ -38,8 +38,13 @@ resource "google_workflows_workflow" "bq_to_csv" {
     bq_dataset = var.bq_dataset
     bq_table = var.bq_table
     gcs_bucket = var.gcs_export_bucket
-    file_name = "bq_export[collection=${var.fs_collection}][key=${var.csv_key_column}].csv"
+    file_name = "bq_export[database=${var.fs_database}][collection=${var.fs_collection}][key=${var.csv_key_column}].csv"
   })
+}
+
+resource "google_project_service" "cloud_scheduler_api" {
+  service            = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
 }
 
 resource "google_cloud_scheduler_job" "workflow_trigger" {
@@ -62,4 +67,8 @@ resource "google_cloud_scheduler_job" "workflow_trigger" {
       service_account_email = google_service_account.csv_to_firestore.email
     }
   }
+
+  depends_on = [
+    google_project_service.cloud_scheduler_api,
+  ]
 }

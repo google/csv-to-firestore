@@ -12,30 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
-import io
-import os
-import sys
+from datetime import datetime, timezone
+import pandas as pd
+import pytest
+
 from main import check_fs_constraints
 from main import csv_to_firestore
 from main import get_file
-from main import set_document
 from main import get_parameters_from_filename
+from main import set_document
 from mock_test import Db
 from mock_test import Storage
-import pandas as pd
-import pytest
 
 # set variables to be used in testing
 test_filename = 'filetest[collection=test][key=product_id].csv'
 collection_id = 'test'
 key_column = 'product_id'
-os.environ['COLLECTION_ID'] = collection_id
-os.environ['KEY_COLUMN'] = key_column
 firestore_path_global = {
+          "database_name": None,
           "collection_id": collection_id,
           "document_id": key_column
           }
+
 
 
 def test_valid_fs_constraints():
@@ -58,16 +56,16 @@ def test_violating_fs_constraints():
   assert check_fs_constraints('dfgh/fdghdfg') is None
 
 
-def test_set_document():
+def test_set_document(caplog):
   # set variables for testing
-  timestamp = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+  timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
   firestore_path = {
           "collection_id": 'test',
           "document_id": 'product_id'
           }
   db = Db()
   batch = db.batch()
-  product_id = 16383
+  product_id = '16383'
   record = {'test': timestamp, 'product_id': product_id}
   # Test if valid record is accepted by set_document function
   assert set_document(record, db, batch, timestamp, firestore_path)
@@ -77,16 +75,10 @@ def test_set_document():
   # Test if record with invalid document_id is rejected.
   record = {'test': timestamp, 'product_id': '.'}
   assert not set_document(record, db, batch, timestamp, firestore_path)
-  # Test if incorrect document id prints expected message.
-  # Redirect sdtout.
-  capturedoutput = io.StringIO()
-  sys.stdout = capturedoutput
-  set_document(record, db, batch, timestamp, firestore_path)
-  # Reset stdout
-  sys.stdout = sys.__stdout__
-  assert """Failed to update record with document id: [.] """ in (
-      capturedoutput.getvalue())
-  del capturedoutput
+  # Test if incorrect document id logs the expected error message.
+  assert 'Failed to update record with document id: [.]' in caplog.text
+  assert 'due to incorrect string format' in caplog.text
+
 
 
 def test_get_file():
@@ -98,7 +90,7 @@ def test_get_file():
   assert in_df.equals(pd.read_csv(test_filename, dtype=object))
 
 
-def compare_in_and_out_data_fs(trigger_event, df, exclude_doc_id):
+def _compare_in_and_out_data_fs(trigger_event, df, exclude_doc_id):
   db = Db()
   storage = Storage()
   csv_to_firestore(trigger_event, storage, db, firestore_path_global)
@@ -113,36 +105,39 @@ def compare_in_and_out_data_fs(trigger_event, df, exclude_doc_id):
     assert data == out_data
 
 
-def test_csv_to_firestore():
-  db = Db()
-  storage = Storage()
+def test_csv_to_firestore(monkeypatch):
   # Read test csv to dataframe.
-  df = pd.read_csv(test_filename)
+  df = pd.read_csv(test_filename, dtype={'product_id': str})
   trigger_event = {'name': test_filename, 'bucket': 'test'}
   # Send random file to firestore and retrieve it to verify if the returned data
   # is equal. Check if EXCLUDE_DOCUMENT_ID_VALUE is properly applied to data.
-  os.environ['EXCLUDE_DOCUMENT_ID_VALUE'] = 'TRUE'
-  compare_in_and_out_data_fs(trigger_event, df, True)
-  os.environ['EXCLUDE_DOCUMENT_ID_VALUE'] = 'FALSE'
-  compare_in_and_out_data_fs(trigger_event, df, False)
+  monkeypatch.setenv('EXCLUDE_DOCUMENT_ID_VALUE', 'TRUE')
+  _compare_in_and_out_data_fs(trigger_event, df, True)
+
+  monkeypatch.setenv('EXCLUDE_DOCUMENT_ID_VALUE', 'FALSE')
+  _compare_in_and_out_data_fs(trigger_event, df, False)
 
 
 
-def assert_filename_parameters(filename, exp_collection_id, exp_document_id):
+def assert_filename_parameters(filename, exp_collection_id, exp_document_id, exp_database_name):
   parameters = get_parameters_from_filename(filename)
   assert exp_collection_id == parameters['collection_id']
   assert exp_document_id == parameters['document_id']
+  assert exp_database_name == parameters['database_name']
 
 
 def test_get_parameters_from_filename():
-  assert_filename_parameters(
-      'data_from_march[collection=test][key=product_id].csv', 'test',
-      'product_id')
-  assert_filename_parameters('data_from_march[collection=test3].csv', 'test3',
-                             None)
-  assert_filename_parameters('key=[data}[collection=test3].csv', 'test3', None)
+  assert_filename_parameters('data[collection=test][key=id].csv', 'test', 'id', None)
+  assert_filename_parameters('data[collection=test2].csv', 'test2', None, None)
+  assert_filename_parameters('key=[data}[collection=test3].csv', 'test3', None, None)
+  assert_filename_parameters('file[database=db1][collection=col1][key=k1].csv',
+                             'col1', 'k1', 'db1')
+
+  parameters = get_parameters_from_filename(
+      'file[database=db1][collection=col1][key=k1].csv')
+  assert parameters['database_name'] == 'db1'
+  assert parameters['collection_id'] == 'col1'
 
   # test if missing collection id raises expected ValueError
   with pytest.raises(ValueError):
     get_parameters_from_filename('file_without_collection_id.csv')
-

@@ -4,8 +4,11 @@ terraform.tfstate*
 
 .DS_Store
 
+.venv/
 venv/
 env/
+
+.coverage
 
 .idea/
 
