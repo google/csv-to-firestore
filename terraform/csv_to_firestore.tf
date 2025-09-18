@@ -63,29 +63,40 @@ resource "google_storage_bucket_object" "cf_upload_object" {
   ]
 }
 
-resource "google_cloudfunctions_function" "csv_to_firestore" {
-  name = "csv-to-firestore"
-  region = var.gcp_region_cloud_function
+resource "google_cloudfunctions2_function" "csv_to_firestore" {
+  name        = "csv-to-firestore"
+  location    = var.gcp_region_cloud_function
   description = "Cloud Function to import CSV files from GCS to Firestore"
-  runtime     = "python312"
-  service_account_email = google_service_account.csv_to_firestore.email
 
-  available_memory_mb   = 1024
-  source_archive_bucket = google_storage_bucket.cf_upload_bucket.name
-  source_archive_object = google_storage_bucket_object.cf_upload_object.name
-  timeout               = 540
-  entry_point           = "csv_to_firestore_trigger"
-  environment_variables = {
-    UPLOAD_HISTORY = true
-    EXCLUDE_DOCUMENT_ID_VALUE = true
+  build_config {
+    runtime     = "python312"
+    entry_point = "csv_to_firestore_trigger"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.cf_upload_bucket.name
+        object = google_storage_bucket_object.cf_upload_object.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count    = 1
+    available_memory      = "1024Mi"
+    timeout_seconds       = 540
+    service_account_email = google_service_account.csv_to_firestore.email
+    environment_variables = {
+      UPLOAD_HISTORY            = "TRUE"
+      EXCLUDE_DOCUMENT_ID_VALUE = "TRUE"
+    }
   }
 
   event_trigger {
-    event_type = "google.storage.object.finalize"
-    resource = var.gcs_export_bucket
+    trigger_region = var.gcp_bucket_location
+    event_type     = "google.cloud.storage.object.v1.finalized"
+    event_filters {
+      attribute = "bucket"
+      value     = google_storage_bucket.bq_export.name
+    }
   }
-
-  depends_on = [
-    google_storage_bucket_object.cf_upload_object
-  ]
 }
+  // The Cloud Function will be triggered when a new object is finalized in the GCS bucket.

@@ -33,6 +33,12 @@ variable "gcs_export_bucket" {
   description = "Storage Bucket to export BQ table to"
 }
 
+variable "fs_database" {
+  type = string
+  description = "Firestore database to use"
+  default = "(default)"
+}
+
 variable "fs_collection" {
   type = string
   description = "Firestore collection to use"
